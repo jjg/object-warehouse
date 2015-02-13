@@ -90,39 +90,67 @@ http.createServer(function(req, res){
 				req.on("end", function(){
 					log.message(log.DEBUG, "new_object: " + new_object);
 					
+					// convert to js object for validation
+					new_object = JSON.parse(new_object);
+					
 					// todo: validate incoming object against schema
 					
 					// generate object fingerprint
 					var shasum = crypto.createHash("sha1");
-					shasum.update(new_object);
+					shasum.update(JSON.stringify(new_object));
 					var fingerprint = shasum.digest("hex");
 					log.message(log.DEBUG, "fingerprint: " + fingerprint);
 					
-					// todo: store object
-					
-					// return token (fingerprint?)
-					var owner_token_permissions = {};
-					owner_token_permissions.owner = true;
-					owner_token_permissions.POST = false;
-					owner_token_permissions.GET = true;
-					owner_token_permissions.PUT = true;
-					owner_token_permissions.DELETE = true;
-					log.message(log.DEBUG, "owner_token_permissions: " + JSON.stringify(owner_token_permissions));
-					var owner_token = jwt.sign(owner_token_permissions,config.SECRET);
-					res.statusCode = 200;
-					res.write(JSON.stringify(owner_token));
-					res.end();
+					//  store object
+					redis.set(endpoint + ":" + fingerprint, JSON.stringify(new_object), function(err, value){
+						if(err){
+							log.message(log.ERROR, "Error storing object: " + err);
+							res.statusCode = 500;
+							res.write("Error storing object: " + err);
+							res.end();
+						} else {
+							// add to index
+							redis.sadd(endpoint, fingerprint, function(err, value){
+								if(err){
+									log.message(log.ERROR, "Error updating " + endpoint + " index: " + err);
+									res.statusCode = 500;
+									res.write("Error updating " + endpoint + " index: " + err);
+									res.end();
+								} else {
+									// return token (fingerprint?)
+									var owner_token_permissions = {};
+									owner_token_permissions.owner = true;
+									owner_token_permissions.id = new_object.id;
+									owner_token_permissions.POST = false;
+									owner_token_permissions.GET = true;
+									owner_token_permissions.PUT = true;
+									owner_token_permissions.DELETE = true;
+									log.message(log.DEBUG, "owner_token_permissions: " + JSON.stringify(owner_token_permissions));
+									var owner_token = jwt.sign(owner_token_permissions,config.SECRET);
+									var result = {
+										token: owner_token,
+										fingerprint: fingerprint
+									};
+									res.statusCode = 200;
+									res.write(JSON.stringify(result));
+									res.end();
+								}
+							});
+						}
+					});
 				});
 				
 				break;
 			case("GET"):
 				// GET requires a token with GET and returns an object minus restricted data
 				
+				// todo: do something to return a list of objects...
+				
 				// todo: load the requested object
-				var obj = {object_id:"foo"};	// currently stubbed
+				var obj = {id:"foo"};	// currently stubbed
 				
 				// validate object signature against requested object_id
-				if(token.object_id === obj.object_id){
+				if(token.id === obj.id){
 					
 					// if the "new_token" parameter is supplied, return a new token with the requested
 					// permissions instead of the object
