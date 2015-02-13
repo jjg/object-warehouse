@@ -61,6 +61,7 @@ http.createServer(function(req, res){
 		} catch(ex){
 			log.message(log.ERROR, "unable to parse token: " + ex);
 			res.statusCode = 401;
+			res.write("unable to parse token: " + ex);
 			res.end();
 			return;
 		}
@@ -72,21 +73,17 @@ http.createServer(function(req, res){
 		
 	// verify that the token allows the requested method
 	if(req.method === "POST" || token[req.method]){
-		
 		// select method
 		log.message(log.DEBUG, "method: " + req.method);
 		switch(req.method){
 			case("POST"):
 				// POST returns an HTTP Status and a token with POST, GET, PUT, DELETE and OWNER
 				var new_object = "";
-				
 				req.on("data", function(chunk){
 					new_object += chunk;
 				});
-				
 				req.on("end", function(){
 					log.message(log.DEBUG, "new_object: " + new_object);
-					
 					// convert to js object for validation
 					new_object = JSON.parse(new_object);
 					
@@ -143,7 +140,6 @@ http.createServer(function(req, res){
 				// test path for specific object request or list
 				var path = require("url").parse(req.url).pathname;
 				if(path.slice(-1) === "/"){
-					
 					// validate token access for this endpoint
 					if(token.endpoint === endpoint){
 						// return object index
@@ -238,9 +234,5 @@ http.createServer(function(req, res){
 		res.statusCode = 401;
 		res.end();
 	}
-
-	// log the result of the request
-	//log.message(log.INFO, "Result: " + res.statusCode);
-
 }).listen(config.SERVER_PORT);
 	
