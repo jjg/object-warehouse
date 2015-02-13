@@ -1,4 +1,5 @@
 module.exports = {
 	SERVER_PORT: "5000",
-	SECRET: "foobar"
+	SECRET: "somethingstrong",
+	REDIS_URL: "redis://localhost:6379"
 };

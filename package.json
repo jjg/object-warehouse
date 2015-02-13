@@ -1,0 +1,8 @@
+{
+	"name":"object-factory",
+	"version":"1.0.0",
+	"dependencies":{
+		"redis-url":"*",
+		"jsonwebtoken":"*"
+	}
+}
