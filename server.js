@@ -78,9 +78,6 @@ http.createServer(function(req, res){
 		switch(req.method){
 			case("POST"):
 				// POST returns an HTTP Status and a token with POST, GET, PUT, DELETE and OWNER
-			
-				//log.message(log.DEBUG, req);
-				
 				var new_object = "";
 				
 				req.on("data", function(chunk){
@@ -121,6 +118,7 @@ http.createServer(function(req, res){
 									var owner_token_permissions = {};
 									owner_token_permissions.owner = true;
 									owner_token_permissions.id = new_object.id;
+									owner_token_permissions.endpoint = endpoint;
 									owner_token_permissions.POST = false;
 									owner_token_permissions.GET = true;
 									owner_token_permissions.PUT = true;
@@ -142,11 +140,30 @@ http.createServer(function(req, res){
 				break;
 			case("GET"):
 				// GET requires a token with GET and returns an object minus restricted data
-				
 				// test path for specific object request or list
 				var path = require("url").parse(req.url).pathname;
 				if(path.slice(-1) === "/"){
-					// todo: return object index
+					
+					// validate token access for this endpoint
+					if(token.endpoint === endpoint){
+						// return object index
+						redis.smembers(endpoint, function(err, value){
+							if(err){
+								log.message("Error loading index: " + err);
+								res.statusCode = 500;
+								res.write("Error loading index: " + err);
+								res.end();
+							} else {
+								res.write(JSON.stringify(value));
+								res.end();
+							}
+						});
+					} else {
+						log.message(log.ERROR, "Supplied token does not grant index permission to the endpoint " + endpoint);
+						res.statusCode = 401;
+						res.write("Supplied token does not grant index permission to the endpoint " + endpoint);
+						res.end();
+					}
 				} else {
 				
 					// load the requested object
@@ -170,6 +187,7 @@ http.createServer(function(req, res){
 										log.message(log.DEBUG, "New token requested");
 										var token_permissions = {};
 										token_permissions.id = requested_object.id;
+										token_permissions.endpoint = endpoint;
 										token_permissions.POST = (url.parse(req.url,true).query.POST === "true") || false;
 										token_permissions.GET = (url.parse(req.url,true).query.GET === "true") || false;
 										token_permissions.PUT = (url.parse(req.url,true).query.PUT === "true") || false;
@@ -185,8 +203,9 @@ http.createServer(function(req, res){
 										res.end();
 									}
 								} else {
-									log.message(log.ERROR, "Supplied token is not authorized for requested object " + obj.object_id);
+									log.message(log.ERROR, "Supplied token is not authorized for requested object " + requested_object.object_id);
 									res.statusCode = 401;
+									res.write("Supplied token is not authorized for requested object " + requested_object.object_id);
 									res.end();
 								}
 							} else {
