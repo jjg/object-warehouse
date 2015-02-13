@@ -139,42 +139,64 @@ http.createServer(function(req, res){
 						}
 					});
 				});
-				
 				break;
 			case("GET"):
 				// GET requires a token with GET and returns an object minus restricted data
 				
-				// todo: do something to return a list of objects...
-				
-				// todo: load the requested object
-				var obj = {id:"foo"};	// currently stubbed
-				
-				// validate object signature against requested object_id
-				if(token.id === obj.id){
-					
-					// if the "new_token" parameter is supplied, return a new token with the requested
-					// permissions instead of the object
-					if(url.parse(req.url,true).query.new_token){
-						log.message(log.DEBUG, "New token requested");
-						var token_permissions = {};
-						token_permissions.POST = (url.parse(req.url,true).query.POST === "true") || false;
-						token_permissions.GET = (url.parse(req.url,true).query.GET === "true") || false;
-						token_permissions.PUT = (url.parse(req.url,true).query.PUT === "true") || false;
-						token_permissions.DELETE = (url.parse(req.url,true).query.DELETE === "true") || false;
-						log.message(log.DEBUG, "token_permissions: " + JSON.stringify(token_permissions));
-						var new_token = jwt.sign(token_permissions,config.SECRET);
-						res.statusCode = 200;
-						res.write(JSON.stringify(new_token));
-						res.end();
-					} else {
-						res.statusCode = 200;
-						res.write(JSON.stringify(obj));
-						res.end();
-					}
+				// test path for specific object request or list
+				var path = require("url").parse(req.url).pathname;
+				if(path.slice(-1) === "/"){
+					// todo: return object index
 				} else {
-					log.message(log.ERROR, "Supplied token is not authorized for requested object " + obj.object_id);
-					res.statusCode = 401;
-					res.end();
+				
+					// load the requested object
+					var fingerprint = path.split("/")[2];
+					log.message(log.DEBUG, "fingerprint: " + fingerprint);
+					redis.get(endpoint + ":" + fingerprint, function(err, value){
+						if(err){
+							log.message("Error loading the requested object: " + err);
+							res.statusCode = 500;
+							res.write("Error loading the requested object: " + err);
+							res.end();
+						} else {
+							if(value){
+								// rehydrate the object
+								var requested_object = JSON.parse(value);
+								// validate object signature against requested object_id
+								if(token.id === requested_object.id){
+									// if the "new_token" parameter is supplied, return a new token with the requested
+									// permissions instead of the object
+									if(url.parse(req.url,true).query.new_token){
+										log.message(log.DEBUG, "New token requested");
+										var token_permissions = {};
+										token_permissions.id = requested_object.id;
+										token_permissions.POST = (url.parse(req.url,true).query.POST === "true") || false;
+										token_permissions.GET = (url.parse(req.url,true).query.GET === "true") || false;
+										token_permissions.PUT = (url.parse(req.url,true).query.PUT === "true") || false;
+										token_permissions.DELETE = (url.parse(req.url,true).query.DELETE === "true") || false;
+										log.message(log.DEBUG, "token_permissions: " + JSON.stringify(token_permissions));
+										var new_token = jwt.sign(token_permissions,config.SECRET);
+										res.statusCode = 200;
+										res.write(JSON.stringify(new_token));
+										res.end();
+									} else {
+										res.statusCode = 200;
+										res.write(JSON.stringify(requested_object));
+										res.end();
+									}
+								} else {
+									log.message(log.ERROR, "Supplied token is not authorized for requested object " + obj.object_id);
+									res.statusCode = 401;
+									res.end();
+								}
+							} else {
+								log.message("Requested object not found");
+								res.statusCode = 404;
+								res.write("Requested object not found");
+								res.end();
+							}
+						}
+					});
 				}
 				break;
 			case("PUT"):
@@ -199,7 +221,7 @@ http.createServer(function(req, res){
 	}
 
 	// log the result of the request
-	log.message(log.INFO, "Result: " + res.statusCode);
+	//log.message(log.INFO, "Result: " + res.statusCode);
 
 }).listen(config.SERVER_PORT);
 	
