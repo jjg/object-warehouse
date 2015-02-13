@@ -35,7 +35,7 @@ The token is included in all subsequent requests for the object.
 
 In addition to the expected GET, PUT and DELETE actions there are two other custom behavoirs.  If you want to share the object you can generate additional keys with specific types of access by making a GET request for the object and specifying the permissions as parameters, like so:
 
-    curl "http://localhost:5000/examples/{fingerprint}?token={token}&GET=true&PUT=false&DELETE=false"
+    curl "http://localhost:5000/examples/{fingerprint}?token={token}&new_token=true&GET=true&PUT=false&DELETE=false"
 	
 This will return a new token that allows the actions requested (*NOTE: case matters here so specify permissions using the same case shown above!*).  Only specified permissions will be set explicitly, any left out will default to `false`. `POST` permission is meaningless after object creation so requests for it will simply be ignored.
 
