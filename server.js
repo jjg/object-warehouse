@@ -10,6 +10,14 @@ var crypto = require("crypto");
 // receive request
 http.createServer(function(req, res){
 	
+	// all responses include these headers to support cross-domain requests
+	var allowed_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"];
+	var allowed_headers = ["Accept", "Accept-Version", "Content-Type", "Api-Version", "Origin", "X-Requested-With","Range","X_FILENAME","X-Access-Token", "X-Encrypted", "X-Private"];
+
+	res.setHeader("Access-Control-Allow-Methods", allowed_methods.join(","));
+	res.setHeader("Access-Control-Allow-Headers", allowed_headers.join(","));
+	res.setHeader("Access-Control-Allow-Origin", "*");
+	
 	// validate token if presented
 	var token = null;
 	if(url.parse(req.url,true).query.token){
@@ -29,7 +37,7 @@ http.createServer(function(req, res){
 	log.message(log.DEBUG, "endpoint: " + endpoint);
 		
 	// verify that the token allows the requested method
-	if(req.method === "POST" || token[req.method]){
+	if(req.method === "POST" || (token && token[req.method])){
 		// select method
 		log.message(log.DEBUG, "method: " + req.method);
 		switch(req.method){
@@ -231,6 +239,11 @@ http.createServer(function(req, res){
 				// todo: DELETE requires a token with DELETE and OWNER and returns an HTTP Status
 			
 				// todo: validate object signature against requested object_id
+				break;
+			case "OPTIONS":
+				// support for OPTIONS is required to support cross-domain requests (CORS)
+				res.writeHead(204);
+				res.end();
 				break;
 			default:
 				log.message(log.WARN, "Unknown method received: " + req.method);
