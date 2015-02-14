@@ -1,24 +1,3 @@
-/*
-	ofactory: generic json-schema based object store
-	
-	token payload:
-	{
-		object_id:<hash of object>,
-		post:<boolean>,
-		get:<boolean>,
-		put:<boolean>
-		delete:<boolean>,
-		owner:<boolean
-	}
-	
-	schema
-	Use schema "title" to define endpoint name
-	Use schema "id" as the slug or path name
-	Use a generated fingerprint of the object as the absolute internal identifier
-	Create a Redis SET for each endpoint to store a list of stored object fingerprints
-	
-*/
-
 // includes
 var config = require("./config.js");
 var log = require("./jlog.js");
@@ -27,28 +6,6 @@ var url = require("url");
 var jwt = require("jsonwebtoken");
 var redis = require("redis-url").connect(config.redis_url);
 var crypto = require("crypto");
-
-// globals
-var schemas = [	// currently hard-coded but will ultimately come from schema server
-		{
-			"title": "Example Schema",
-			"type": "object",
-			"properties": {
-				"firstName": {
-				  "type": "string"
-				},
-				"lastName": {
-				  "type": "string"
-				},
-				"age": {
-				  "description": "Age in years",
-				  "type": "integer",
-				  "minimum": 0
-				}
-			},
-			"required": ["firstName", "lastName"]
-		}
-	];
 
 // receive request
 http.createServer(function(req, res){
@@ -196,6 +153,7 @@ http.createServer(function(req, res){
 										if(value){
 											// only return objects with a matching ID
 											if(JSON.parse(value).id === id){
+												// todo: should we restrict objects to only those expressly allowed by the token?
 												obj_index.push(value);
 											}
 											i++;
