@@ -43,7 +43,7 @@ You can also request an index of the objects stored at a given endpoint by perfo
 
     curl "http://localhost:5000/examples/?token={token}
 	
-This returns an array of fingerprints for the objects stored at this location.  These fingerprints can be used to fetch a specific object stored at the specified endpoint, eventually this may return additional object information but that's still up-in-the-air at the moment.
+This returns an array of whole objects stored at this location.
 
 #TODO
 `PUT` and `DELETE` HTTP verbs are not yet implemented, and there may be additional changes as noted above.

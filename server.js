@@ -143,15 +143,35 @@ http.createServer(function(req, res){
 					// validate token access for this endpoint
 					if(token.endpoint === endpoint){
 						// return object index
-						redis.smembers(endpoint, function(err, value){
+						redis.smembers(endpoint, function(err, index_values){
 							if(err){
-								log.message("Error loading index: " + err);
+								log.message(log.ERROR,"Error loading index: " + err);
 								res.statusCode = 500;
 								res.write("Error loading index: " + err);
 								res.end();
 							} else {
-								res.write(JSON.stringify(value));
-								res.end();
+								var obj_index = [];
+								for(var obj in index_values){
+									log.message(log.DEBUG,"index_values[obj]: " + index_values[obj]);
+									redis.get(endpoint + ":" + index_values[obj], function(err, value){
+										if(err){
+											log.message(log.WARN,"Error loading object from index: " + err);
+											//res.statusCode = 500;
+											//res.write("Error loading object from index: " + err);
+											//res.end();
+										} else {
+											log.message(log.DEBUG,"value: " + value);
+											if(value){
+												obj_index.push(value);
+											}
+											log.message(log.DEBUG,"index_values.length: " + index_values.length + " obj_index.length: " + obj_index.length);
+											if(obj_index.length == index_values.length){
+												res.write(JSON.stringify(obj_index));
+												res.end();
+											}
+										}
+									});
+								}
 							}
 						});
 					} else {
