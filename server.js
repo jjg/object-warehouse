@@ -183,6 +183,45 @@ http.createServer(function(req, res){
 				} else {
 				
 					// load the requested object
+					var id = path.split("/")[2];
+					// load endpoint object index
+					redis.smembers(endpoint, function(err, index_values){
+						if(err){
+							log.message(log.ERROR,"Error loading index: " + err);
+							res.statusCode = 500;
+							res.write("Error loading index: " + err);
+							res.end();
+						} else {
+							var obj_index = [];
+							var i = 0;
+							for(obj in index_values){
+								//log.message(log.DEBUG,"index_values[obj]: " + index_values[obj]);
+								redis.get(endpoint + ":" + index_values[obj], function(err, value){
+									if(err){
+										log.message(log.WARN,"Error loading object from index: " + err);
+										//res.statusCode = 500;
+										//res.write("Error loading object from index: " + err);
+										//res.end();
+									} else {
+										log.message(log.DEBUG,"value: " + value);
+										if(value){
+											// only return objects with a matching ID
+											if(JSON.parse(value).id === id){
+												obj_index.push(value);
+											}
+											i++;
+										}
+										log.message(log.DEBUG,"index_values.length: " + index_values.length + " i: " + i);
+										if(i == index_values.length){
+											res.write(JSON.stringify(obj_index));
+											res.end();
+										}
+									}
+								});
+							}
+						}
+					});
+					/*
 					var fingerprint = path.split("/")[2];
 					log.message(log.DEBUG, "fingerprint: " + fingerprint);
 					redis.get(endpoint + ":" + fingerprint, function(err, value){
@@ -232,6 +271,7 @@ http.createServer(function(req, res){
 							}
 						}
 					});
+					*/
 				}
 				break;
 			case("PUT"):
