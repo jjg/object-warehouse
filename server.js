@@ -4,7 +4,7 @@ var log = require("./jlog.js");
 var http = require("http");
 var url = require("url");
 var jwt = require("jsonwebtoken");
-var redis = require("redis-url").connect(config.redis_url);
+var redis = require("redis-url").connect(config.REDIS_URL);
 var crypto = require("crypto");
 
 // receive request
