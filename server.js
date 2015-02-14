@@ -194,7 +194,7 @@ http.createServer(function(req, res){
 						} else {
 							var obj_index = [];
 							var i = 0;
-							for(obj in index_values){
+							for(var obj in index_values){
 								//log.message(log.DEBUG,"index_values[obj]: " + index_values[obj]);
 								redis.get(endpoint + ":" + index_values[obj], function(err, value){
 									if(err){
