@@ -152,19 +152,13 @@ http.createServer(function(req, res){
 							} else {
 								var obj_index = [];
 								for(var obj in index_values){
-									log.message(log.DEBUG,"index_values[obj]: " + index_values[obj]);
 									redis.get(endpoint + ":" + index_values[obj], function(err, value){
 										if(err){
 											log.message(log.WARN,"Error loading object from index: " + err);
-											//res.statusCode = 500;
-											//res.write("Error loading object from index: " + err);
-											//res.end();
 										} else {
-											log.message(log.DEBUG,"value: " + value);
 											if(value){
 												obj_index.push(value);
 											}
-											log.message(log.DEBUG,"index_values.length: " + index_values.length + " obj_index.length: " + obj_index.length);
 											if(obj_index.length == index_values.length){
 												res.write(JSON.stringify(obj_index));
 												res.end();
@@ -195,15 +189,10 @@ http.createServer(function(req, res){
 							var obj_index = [];
 							var i = 0;
 							for(var obj in index_values){
-								//log.message(log.DEBUG,"index_values[obj]: " + index_values[obj]);
 								redis.get(endpoint + ":" + index_values[obj], function(err, value){
 									if(err){
 										log.message(log.WARN,"Error loading object from index: " + err);
-										//res.statusCode = 500;
-										//res.write("Error loading object from index: " + err);
-										//res.end();
 									} else {
-										log.message(log.DEBUG,"value: " + value);
 										if(value){
 											// only return objects with a matching ID
 											if(JSON.parse(value).id === id){
@@ -211,7 +200,6 @@ http.createServer(function(req, res){
 											}
 											i++;
 										}
-										log.message(log.DEBUG,"index_values.length: " + index_values.length + " i: " + i);
 										if(i == index_values.length){
 											res.write(JSON.stringify(obj_index));
 											res.end();
